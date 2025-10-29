@@ -1,1 +1,55 @@
+// ==============================
+// 毎朝8時にGASトリガーで実行
+// ==============================
+function checkAndSendEvent() {
+  const url = "https://sunabaco.jp/events"; // 対象サイトURL
+  const response = UrlFetchApp.fetch(url);
+  const html = response.getContentText();
+  
+  // ==============================
+  // HTMLから最新イベント情報を抽出
+  // ==============================
+  const newEvent = parseEvent(html); // 独自関数でHTML解析
+
+  // ==============================
+  // 前回イベントと比較
+  // ==============================
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const lastEvent = scriptProperties.getProperty("LAST_EVENT");
+  
+  if (newEvent && newEvent !== lastEvent) {
+    // ==============================
+    // HTMLメール作成（画像付き）
+    // ==============================
+    const subject = "SUNABACOイベント更新通知";
+    const body = `
+      <h2>新しいイベントがあります！</h2>
+      <p>${newEvent}</p>
+      <img src="https://example.com/sample-image.jpg" alt="イベント画像" style="width:300px;">
+    `;
+    
+    // ==============================
+    // Gmailで送信
+    // ==============================
+    GmailApp.sendEmail(
+      "あなたのメール@example.com",
+      subject,
+      "", // プレーンテキストは空
+      { htmlBody: body }
+    );
+    
+    // ==============================
+    // 最新イベントを保存
+    // ==============================
+    scriptProperties.setProperty("LAST_EVENT", newEvent);
+  }
+}
+
+// ==============================
+// HTML解析関数（例: h3タグのイベントタイトルを取得）
+// ==============================
+function parseEvent(html) {
+  const match = html.match(/<h3 class="event-title">(.+?)<\/h3>/);
+  return match ? match[1] : null;
+}
 
